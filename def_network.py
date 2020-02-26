@@ -19,7 +19,7 @@ x_train_scaled = scaler.fit_transform(x_train)
 x_valid_scaled = scaler.transform(x_valid)
 x_test_scaled = scaler.transform(x_test)
 
-class CustomizeDenseLayer(keras.layers.Layer):
+class CustomizeDenseLayer(keras.layers.Layer):                  #改动
     def __init__(self,unit,activation=None,**kwargs):
         super(CustomizeDenseLayer, self).__init__(**kwargs)
         self.unit = unit
@@ -37,16 +37,16 @@ class CustomizeDenseLayer(keras.layers.Layer):
     def call(self, x):
         return self.activation(x @ self.kernal + self.bias)
 
-customized_softplus = keras.layers.Lambda(lambda x:tf.nn.softplus(x))
+customized_softplus = keras.layers.Lambda(lambda x:tf.nn.softplus(x))                   #改动
 
 model = keras.models.Sequential()
-model.add(CustomizeDenseLayer(30,'relu',input_shape=x_train_scaled.shape[1:]))
-customized_softplus
-model.add(CustomizeDenseLayer(30,'relu'))
-customized_softplus
-model.add(CustomizeDenseLayer(30,'relu'))
-customized_softplus
-model.add(CustomizeDenseLayer(1))
+model.add(CustomizeDenseLayer(30,'relu',input_shape=x_train_scaled.shape[1:]))          #改动
+customized_softplus                                                                     #改动
+model.add(CustomizeDenseLayer(30,'relu'))                                               #改动
+customized_softplus                                                                     #改动
+model.add(CustomizeDenseLayer(30,'relu'))                                               #改动
+customized_softplus                                                                     #改动
+model.add(CustomizeDenseLayer(1))                                                       #改动
 # 模型编译
 model.compile(loss='mean_squared_error',optimizer='adam')      #optimizer我用了 'sgd'几个epochloss就变成了nan了
 callbacks = [keras.callbacks.EarlyStopping(patience=5,min_delta=1e-2)]
