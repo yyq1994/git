@@ -8,7 +8,7 @@ def g(x1,x2):
     return (x1 + 5) * (x2 ** 2)
 
 with tf.GradientTape() as tape:         #用完一次就关闭了
-    # tape.watch(x1)                    #如果x1,x2是常量的话，看起来就像是把它们当成变量来算了
+    # tape.watch(x1)                    #如果x1,x2是常量的话，看起来就像是把它们当成变量来求导了
     # tape.watch(x2)
     z = g(x1,x2)
 

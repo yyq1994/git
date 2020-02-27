@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import tensorflow as tf
 import tensorflow.keras as keras
+import numpy as np
 
 # 下载数据----------加利福尼亚房价
 from sklearn.datasets import fetch_california_housing
@@ -19,6 +20,7 @@ x_train_scaled = scaler.fit_transform(x_train)
 x_valid_scaled = scaler.transform(x_valid)
 x_test_scaled = scaler.transform(x_test)
 
+# 定义网络层次
 class CustomizeDenseLayer(keras.layers.Layer):                  #改动
     def __init__(self,unit,activation=None,**kwargs):
         super(CustomizeDenseLayer, self).__init__(**kwargs)
@@ -47,21 +49,39 @@ customized_softplus                                                             
 model.add(CustomizeDenseLayer(30,'relu'))                                               #改动
 customized_softplus                                                                     #改动
 model.add(CustomizeDenseLayer(1))                                                       #改动
+
 # 模型编译
-model.compile(loss='mean_squared_error',optimizer='adam')      #optimizer我用了 'sgd'几个epochloss就变成了nan了
-callbacks = [keras.callbacks.EarlyStopping(patience=5,min_delta=1e-2)]
+# 定义参数
+epochs = 10
+batch_size = 32
+step_per_epoch = len(x_train_scaled) // batch_size
+optimizer = keras.optimizers.Adam()
+metric = keras.metrics.MeanSquaredError()
+# 取数据
+def random_banch(x,y,batch_size = 32):
+    idx = np.random.randint(0,len(x),batch_size)
+    return x[idx],y[idx]
 
 #模型训练
-history = model.fit(x_train_scaled,y_train,validation_data=(x_valid_scaled,y_valid),epochs=100,callbacks=callbacks)
+for epoch in range(epochs):
+    metric.reset_states()
+    for step in range(step_per_epoch):
+        x_batch,y_batch = random_banch(x_train_scaled,y_train_all)
+        with tf.GradientTape() as tape:
+            y_pred = model(x_batch)
+            loss = tf.reduce_mean(
+                keras.losses.mean_squared_error(y_batch,y_pred)
+            )
 
-# 效果绘制
-def plot_learning_curves(history):
-    pd.DataFrame(history.history).plot(figsize=(8,5))
-    plt.grid(True)
-    plt.gca().set_ylim(0,1)
-    plt.show()
-
-plot_learning_curves(history)
-
- # 评估
-print(model.evaluate(x_test_scaled,y_test))
+            metric(y_batch,y_pred)
+            # print(loss.shape,metric.input_shape)
+        grads = tape.gradient(loss,model.variables)
+        grads_vars = zip(grads,model.variables)
+        # 梯度更新
+        optimizer.apply_gradients(grads_vars)
+        print('epoch:{}    ,train_metric:{},\ttrain_loss: {}'.format(epoch,metric.result().numpy(),loss),end=' ')
+        y_valid_pre = model(x_valid_scaled)
+        valid_loss = tf.reduce_mean(keras.losses.mean_squared_error(
+            y_valid,y_valid_pre
+        ))
+        print('\t valid_loss:{}'.format(valid_loss.numpy()))
